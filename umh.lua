@@ -26,10 +26,10 @@ getgenv().IsTeleporting = false
 
 local running = true
 
--- Position Lock State (Placement Lock with Lower Gravity = 100)
+-- Position Lock State (Placement Lock with Minimal Gravity = 50)
 local positionLockEnabled = false
 local lockedPosition = nil
-local positionLockGravity = 100
+local positionLockGravity = 50
 
 -- Auto Crate States
 local crateEnabled = false
@@ -665,7 +665,7 @@ GravityBox.FocusLost:Connect(function()
     end
 end)
 
--- Character Modifiers & Position Lock Loop (Horizontal Lock + 100 Gravity Force)
+-- Character Modifiers & Position Lock Loop (Horizontal Lock + 50 Gravity Force)
 RunService.Heartbeat:Connect(function()
     if not running then return end
     
@@ -680,7 +680,7 @@ RunService.Heartbeat:Connect(function()
         
         if positionLockEnabled and lockedPosition and hrp then
             local currentPos = hrp.Position
-            -- Lock X and Z axes, apply 100 downward force on Y
+            -- Lock X and Z axes, apply 50 downward force on Y
             hrp.CFrame = CFrame.new(Vector3.new(lockedPosition.X, currentPos.Y, lockedPosition.Y), currentPos + hrp.CFrame.LookVector)
             hrp.AssemblyLinearVelocity = Vector3.new(0, -positionLockGravity, 0)
             hrp.AssemblyAngularVelocity = Vector3.zero
