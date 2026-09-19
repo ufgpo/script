@@ -20,16 +20,11 @@ end
 getgenv().AuraMine = false
 getgenv().SingleMine = false
 getgenv().WalkSpeed = 16
-getgenv().Gravity = 196.2
+getgenv().Gravity = 1000 -- Set default workspace gravity to 1000
 getgenv().ModifyStats = true
 getgenv().IsTeleporting = false
 
 local running = true
-
--- Position Lock State (Placement Lock with Minimal Gravity = 50)
-local positionLockEnabled = false
-local lockedPosition = nil
-local positionLockGravity = 50
 
 -- Auto Crate States
 local crateEnabled = false
@@ -404,7 +399,7 @@ EggToggle.Parent = LeftContainer
 Instance.new("UICorner", EggToggle).CornerRadius = UDim.new(0, 5)
 
 -- =========================================================
--- RIGHT COLUMN: MOVEMENT & POSITION LOCK & TELEPORTS
+-- RIGHT COLUMN: MOVEMENT & TELEPORTS
 -- =========================================================
 CreateHeader("PLAYER MOVEMENT", 1, RightContainer)
 
@@ -430,26 +425,13 @@ GravityBox.BorderSizePixel = 0
 GravityBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 GravityBox.PlaceholderText = "Gravity (Default: 196.2)"
 GravityBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 160)
-GravityBox.Text = ""
+GravityBox.Text = "1000"
 GravityBox.Font = Enum.Font.Gotham
 GravityBox.TextSize = 11
 GravityBox.LayoutOrder = 3
 GravityBox.Parent = RightContainer
 
 Instance.new("UICorner", GravityBox).CornerRadius = UDim.new(0, 5)
-
-local PositionLockToggle = Instance.new("TextButton")
-PositionLockToggle.Size = UDim2.new(1, -4, 0, 24)
-PositionLockToggle.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-PositionLockToggle.BorderSizePixel = 0
-PositionLockToggle.Text = "Position Lock: OFF"
-PositionLockToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-PositionLockToggle.TextSize = 11
-PositionLockToggle.Font = Enum.Font.GothamBold
-PositionLockToggle.LayoutOrder = 4
-PositionLockToggle.Parent = RightContainer
-
-Instance.new("UICorner", PositionLockToggle).CornerRadius = UDim.new(0, 5)
 
 CreateHeader("TELEPORT PADS & SERVER", 5, RightContainer)
 
@@ -574,6 +556,9 @@ end
 MakeDraggable(MainFrame)
 MakeDraggable(RestoreBtn)
 
+-- Apply initial gravity to workspace immediately
+workspace.Gravity = 1000
+
 -- =========================================================
 -- EVENT BINDINGS
 -- =========================================================
@@ -590,11 +575,11 @@ end)
 CloseBtn.MouseButton1Click:Connect(function()
     crateEnabled = false
     eggEnabled = false
-    positionLockEnabled = false
     getgenv().AuraMine = false
     getgenv().SingleMine = false
     getgenv().ModifyStats = false
     running = false
+    workspace.Gravity = 196.2 -- Reset gravity on close
     ScreenGui:Destroy()
 end)
 
@@ -628,24 +613,6 @@ EggToggle.MouseButton1Click:Connect(function()
     end
 end)
 
-PositionLockToggle.MouseButton1Click:Connect(function()
-    positionLockEnabled = not positionLockEnabled
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    
-    if positionLockEnabled then
-        if hrp then
-            lockedPosition = Vector2.new(hrp.Position.X, hrp.Position.Z)
-        end
-        PositionLockToggle.Text = "Position Lock: ON"
-        PositionLockToggle.BackgroundColor3 = Color3.fromRGB(50, 180, 80)
-    else
-        lockedPosition = nil
-        PositionLockToggle.Text = "Position Lock: OFF"
-        PositionLockToggle.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-    end
-end)
-
 SetWP1Btn.MouseButton1Click:Connect(function() SetWaypointPad(1) end)
 TPWP1Btn.MouseButton1Click:Connect(function() TeleportToPad(1) end)
 SetWP2Btn.MouseButton1Click:Connect(function() SetWaypointPad(2) end)
@@ -665,25 +632,15 @@ GravityBox.FocusLost:Connect(function()
     end
 end)
 
--- Character Modifiers & Position Lock Loop (Horizontal Lock + 50 Gravity Force)
+-- Lightweight Stat & Gravity Loop (No heavy velocity/CFrame math overriding physics)
 RunService.Heartbeat:Connect(function()
     if not running then return end
     
     local character = LocalPlayer.Character
     if character then
         local humanoid = character:FindFirstChildOfClass("Humanoid")
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-        
         if humanoid and getgenv().ModifyStats and getgenv().WalkSpeed then
             humanoid.WalkSpeed = getgenv().WalkSpeed
-        end
-        
-        if positionLockEnabled and lockedPosition and hrp then
-            local currentPos = hrp.Position
-            -- Lock X and Z axes, apply 50 downward force on Y
-            hrp.CFrame = CFrame.new(Vector3.new(lockedPosition.X, currentPos.Y, lockedPosition.Y), currentPos + hrp.CFrame.LookVector)
-            hrp.AssemblyLinearVelocity = Vector3.new(0, -positionLockGravity, 0)
-            hrp.AssemblyAngularVelocity = Vector3.zero
         end
     end
     
