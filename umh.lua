@@ -20,7 +20,7 @@ end
 getgenv().AuraMine = false
 getgenv().SingleMine = false
 getgenv().WalkSpeed = 16
-getgenv().Gravity = 1000 -- Set default workspace gravity to 1000
+getgenv().Gravity = 1000
 getgenv().ModifyStats = true
 getgenv().IsTeleporting = false
 
@@ -31,10 +31,10 @@ local crateEnabled = false
 local currentCrate = "Omega"
 local crateDelay = 0.1
 
--- Auto Equip Egg States (0.2s interval)
+-- Auto Equip Egg States (0.5s interval)
 local eggEnabled = false
 local selectedEgg = "Common Egg"
-local equipInterval = 0.2
+local equipInterval = 0.5
 
 local eggs = {
     "Common Egg", "Unique Egg", "Epic Egg", "Omega Egg",
@@ -632,7 +632,7 @@ GravityBox.FocusLost:Connect(function()
     end
 end)
 
--- Lightweight Stat & Gravity Loop (No heavy velocity/CFrame math overriding physics)
+-- Lightweight Stat & Gravity Loop
 RunService.Heartbeat:Connect(function()
     if not running then return end
     
@@ -678,7 +678,7 @@ task.spawn(function()
                 end
             end)
         end
-        task.wait(equipInterval) -- Set to 0.2 seconds
+        task.wait(equipInterval) -- Set to 0.5 seconds
     end
 end)
 
