@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local TeleportService = game:GetService("TeleportService")
+local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
@@ -25,15 +26,20 @@ getgenv().IsTeleporting = false
 
 local running = true
 
+-- Position Lock State (Placement Lock with Lower Gravity = 100)
+local positionLockEnabled = false
+local lockedPosition = nil
+local positionLockGravity = 100
+
 -- Auto Crate States
 local crateEnabled = false
 local currentCrate = "Omega"
 local crateDelay = 0.1
 
--- Auto Equip Egg States
+-- Auto Equip Egg States (0.2s interval)
 local eggEnabled = false
 local selectedEgg = "Common Egg"
-local equipInterval = 2.0
+local equipInterval = 0.2
 
 local eggs = {
     "Common Egg", "Unique Egg", "Epic Egg", "Omega Egg",
@@ -138,7 +144,7 @@ ScreenGui.Parent = parentGui
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.fromOffset(480, 250)
+MainFrame.Size = UDim2.fromOffset(480, 280)
 MainFrame.Position = UDim2.new(0.5, -240, 0.25, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 MainFrame.BorderSizePixel = 0
@@ -180,7 +186,7 @@ RightContainer.Position = UDim2.new(0.5, 5, 0, 30)
 RightContainer.BackgroundTransparency = 1
 RightContainer.BorderSizePixel = 0
 RightContainer.ScrollBarThickness = 3
-RightContainer.CanvasSize = UDim2.fromOffset(0, 280)
+RightContainer.CanvasSize = UDim2.fromOffset(0, 310)
 RightContainer.Parent = MainFrame
 
 local RightLayout = Instance.new("UIListLayout")
@@ -398,7 +404,7 @@ EggToggle.Parent = LeftContainer
 Instance.new("UICorner", EggToggle).CornerRadius = UDim.new(0, 5)
 
 -- =========================================================
--- RIGHT COLUMN: MOVEMENT & TELEPORTS (FLY REMOVED)
+-- RIGHT COLUMN: MOVEMENT & POSITION LOCK & TELEPORTS
 -- =========================================================
 CreateHeader("PLAYER MOVEMENT", 1, RightContainer)
 
@@ -432,13 +438,26 @@ GravityBox.Parent = RightContainer
 
 Instance.new("UICorner", GravityBox).CornerRadius = UDim.new(0, 5)
 
-CreateHeader("TELEPORT PADS & SERVER", 4, RightContainer)
+local PositionLockToggle = Instance.new("TextButton")
+PositionLockToggle.Size = UDim2.new(1, -4, 0, 24)
+PositionLockToggle.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+PositionLockToggle.BorderSizePixel = 0
+PositionLockToggle.Text = "Position Lock: OFF"
+PositionLockToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+PositionLockToggle.TextSize = 11
+PositionLockToggle.Font = Enum.Font.GothamBold
+PositionLockToggle.LayoutOrder = 4
+PositionLockToggle.Parent = RightContainer
+
+Instance.new("UICorner", PositionLockToggle).CornerRadius = UDim.new(0, 5)
+
+CreateHeader("TELEPORT PADS & SERVER", 5, RightContainer)
 
 -- Pad 1 Controls
 local WP1Frame = Instance.new("Frame")
 WP1Frame.Size = UDim2.new(1, -4, 0, 24)
 WP1Frame.BackgroundTransparency = 1
-WP1Frame.LayoutOrder = 5
+WP1Frame.LayoutOrder = 6
 WP1Frame.Parent = RightContainer
 
 local WP1Layout = Instance.new("UIListLayout")
@@ -470,7 +489,7 @@ Instance.new("UICorner", TPWP1Btn).CornerRadius = UDim.new(0, 5)
 local WP2Frame = Instance.new("Frame")
 WP2Frame.Size = UDim2.new(1, -4, 0, 24)
 WP2Frame.BackgroundTransparency = 1
-WP2Frame.LayoutOrder = 6
+WP2Frame.LayoutOrder = 7
 WP2Frame.Parent = RightContainer
 
 local WP2Layout = Instance.new("UIListLayout")
@@ -507,7 +526,7 @@ RejoinBtn.Text = "Rejoin Same Server"
 RejoinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 RejoinBtn.TextSize = 11
 RejoinBtn.Font = Enum.Font.GothamBold
-RejoinBtn.LayoutOrder = 7
+RejoinBtn.LayoutOrder = 8
 RejoinBtn.Parent = RightContainer
 
 Instance.new("UICorner", RejoinBtn).CornerRadius = UDim.new(0, 5)
@@ -571,6 +590,7 @@ end)
 CloseBtn.MouseButton1Click:Connect(function()
     crateEnabled = false
     eggEnabled = false
+    positionLockEnabled = false
     getgenv().AuraMine = false
     getgenv().SingleMine = false
     getgenv().ModifyStats = false
@@ -608,6 +628,24 @@ EggToggle.MouseButton1Click:Connect(function()
     end
 end)
 
+PositionLockToggle.MouseButton1Click:Connect(function()
+    positionLockEnabled = not positionLockEnabled
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if positionLockEnabled then
+        if hrp then
+            lockedPosition = Vector2.new(hrp.Position.X, hrp.Position.Z)
+        end
+        PositionLockToggle.Text = "Position Lock: ON"
+        PositionLockToggle.BackgroundColor3 = Color3.fromRGB(50, 180, 80)
+    else
+        lockedPosition = nil
+        PositionLockToggle.Text = "Position Lock: OFF"
+        PositionLockToggle.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+    end
+end)
+
 SetWP1Btn.MouseButton1Click:Connect(function() SetWaypointPad(1) end)
 TPWP1Btn.MouseButton1Click:Connect(function() TeleportToPad(1) end)
 SetWP2Btn.MouseButton1Click:Connect(function() SetWaypointPad(2) end)
@@ -627,20 +665,30 @@ GravityBox.FocusLost:Connect(function()
     end
 end)
 
--- Character Modifiers Loop
-task.spawn(function()
-    while getgenv().ModifyStats and running do
-        local character = LocalPlayer.Character
-        if character then
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid and getgenv().WalkSpeed then
-                humanoid.WalkSpeed = getgenv().WalkSpeed
-            end
+-- Character Modifiers & Position Lock Loop (Horizontal Lock + 100 Gravity Force)
+RunService.Heartbeat:Connect(function()
+    if not running then return end
+    
+    local character = LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        
+        if humanoid and getgenv().ModifyStats and getgenv().WalkSpeed then
+            humanoid.WalkSpeed = getgenv().WalkSpeed
         end
-        if getgenv().Gravity then
-            workspace.Gravity = getgenv().Gravity
+        
+        if positionLockEnabled and lockedPosition and hrp then
+            local currentPos = hrp.Position
+            -- Lock X and Z axes, apply 100 downward force on Y
+            hrp.CFrame = CFrame.new(Vector3.new(lockedPosition.X, currentPos.Y, lockedPosition.Y), currentPos + hrp.CFrame.LookVector)
+            hrp.AssemblyLinearVelocity = Vector3.new(0, -positionLockGravity, 0)
+            hrp.AssemblyAngularVelocity = Vector3.zero
         end
-        task.wait(0.1)
+    end
+    
+    if getgenv().Gravity then
+        workspace.Gravity = getgenv().Gravity
     end
 end)
 
@@ -673,7 +721,7 @@ task.spawn(function()
                 end
             end)
         end
-        task.wait(equipInterval)
+        task.wait(equipInterval) -- Set to 0.2 seconds
     end
 end)
 
