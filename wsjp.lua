@@ -1,5 +1,5 @@
 -- ========================================================
--- STANDALONE WALK SPEED & JUMP POWER EDITOR WITH UI
+-- STANDALONE WALK SPEED & JUMP POWER EDITOR WITH MINIMIZE UI
 -- ========================================================
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -21,9 +21,10 @@ ScreenGui.Name = "StatEditorUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = (gethui and gethui()) or CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 
+-- Main Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 160, 0, 95)
+MainFrame.Size = UDim2.new(0, 160, 0, 120)
 MainFrame.Position = UDim2.new(0.5, -80, 0.1, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 MainFrame.BorderSizePixel = 0
@@ -46,11 +47,46 @@ UIListLayout.Padding = UDim.new(0, 6)
 UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local UIPadding = Instance.new("UIPadding")
-UIPadding.PaddingTop = UDim.new(0, 8)
+UIPadding.PaddingTop = UDim.new(0, 6)
 UIPadding.PaddingBottom = UDim.new(0, 8)
 UIPadding.PaddingLeft = UDim.new(0, 8)
 UIPadding.PaddingRight = UDim.new(0, 8)
 UIPadding.Parent = MainFrame
+
+-- Top Bar Container (Header + Minimize Button)
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 20)
+TopBar.BackgroundTransparency = 1
+TopBar.LayoutOrder = 1
+TopBar.Parent = MainFrame
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(1, -22, 1, 0)
+TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Stat Editor"
+TitleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.TextSize = 13
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TopBar
+
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Name = "MinimizeBtn"
+MinimizeBtn.Size = UDim2.new(0, 20, 0, 20)
+MinimizeBtn.Position = UDim2.new(1, -20, 0, 0)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.Text = "-"
+MinimizeBtn.Font = Enum.Font.SourceSansBold
+MinimizeBtn.TextSize = 16
+MinimizeBtn.Parent = TopBar
+
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 4)
+MinCorner.Parent = MinimizeBtn
 
 -- Speed Input Box
 local SpeedBox = Instance.new("TextBox")
@@ -63,7 +99,7 @@ SpeedBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
 SpeedBox.Text = ""
 SpeedBox.Font = Enum.Font.SourceSans
 SpeedBox.TextSize = 13
-SpeedBox.LayoutOrder = 1
+SpeedBox.LayoutOrder = 2
 SpeedBox.Parent = MainFrame
 
 local SpeedCorner = Instance.new("UICorner")
@@ -81,12 +117,46 @@ JumpBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
 JumpBox.Text = ""
 JumpBox.Font = Enum.Font.SourceSans
 JumpBox.TextSize = 13
-JumpBox.LayoutOrder = 2
+JumpBox.LayoutOrder = 3
 JumpBox.Parent = MainFrame
 
 local JumpCorner = Instance.new("UICorner")
 JumpCorner.CornerRadius = UDim.new(0, 6)
 JumpCorner.Parent = JumpBox
+
+-- Minimized "Open Menu" Button (Upper Center of Screen)
+local RestoreBtn = Instance.new("TextButton")
+RestoreBtn.Name = "RestoreBtn"
+RestoreBtn.Size = UDim2.new(0, 90, 0, 28)
+RestoreBtn.Position = UDim2.new(0.5, -45, 0, 10)
+RestoreBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+RestoreBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+RestoreBtn.Text = "Open Menu"
+RestoreBtn.Font = Enum.Font.SourceSansBold
+RestoreBtn.TextSize = 13
+RestoreBtn.Visible = false
+RestoreBtn.Parent = ScreenGui
+
+local RestoreCorner = Instance.new("UICorner")
+RestoreCorner.CornerRadius = UDim.new(0, 6)
+RestoreCorner.Parent = RestoreBtn
+
+local RestoreStroke = Instance.new("UIStroke")
+RestoreStroke.Color = Color3.fromRGB(255, 255, 255)
+RestoreStroke.Thickness = 1.5
+RestoreStroke.Transparency = 0.8
+RestoreStroke.Parent = RestoreBtn
+
+-- Minimize / Restore Toggle Events
+MinimizeBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    RestoreBtn.Visible = true
+end)
+
+RestoreBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    RestoreBtn.Visible = false
+end)
 
 -- Dragging Mechanism
 local dragging = false
